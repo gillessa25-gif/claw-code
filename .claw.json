@@ -1,5 +1,12 @@
 {
   "aliases": {
     "quick": "haiku"
+  },
+  "mcpServers": {
+    "computer-use": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "computer-use-mcp"]
+    }
   }
 }
