@@ -11,3 +11,5 @@
 - 2026-10-14 : 11 skills yt-* (https://github.com/Jakeschincariol/chatgpt-youtube-agent-skill, MIT) copiés dans
   ~/.claude/skills. Conçus pour ChatGPT/Codex (chemin voix ~/.codex/youtube/voice.md) ; compatibilité Claude Code
   non testée. Pas d'appel réseau/subprocess détecté par grep.
+- 2026-10-14 : chemins ~/.codex/youtube remplacés par ~/.claude/youtube dans les SKILL.md yt-* ; modèle de voix copié
+  dans ~/.claude/youtube/voice.md (à remplir par l'utilisateur).
