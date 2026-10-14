@@ -13,3 +13,5 @@
   non testée. Pas d'appel réseau/subprocess détecté par grep.
 - 2026-10-14 : chemins ~/.codex/youtube remplacés par ~/.claude/youtube dans les SKILL.md yt-* ; modèle de voix copié
   dans ~/.claude/youtube/voice.md (à remplir par l'utilisateur).
+- 2026-10-14 : transcription fournie par l'utilisateur (vidéo KyC8r-zitVE, "addictive storytelling") résumée en skill
+  ~/.claude/skills/story-loop (stakes / big question / head fake / rehook). YouTube inaccessible depuis le proxy.
