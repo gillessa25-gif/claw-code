@@ -8,3 +8,6 @@
 - 2026-10-14 : skill `arena` (https://github.com/Jakeschincariol/arena-skill, MIT) installé dans
   ~/.claude/skills/arena (copie du dossier skills/arena). Code relu : pas d'appel réseau ni subprocess.
   Note : ~/.claude est dans le conteneur cloud éphémère ; à réinstaller si nouvelle session.
+- 2026-10-14 : 11 skills yt-* (https://github.com/Jakeschincariol/chatgpt-youtube-agent-skill, MIT) copiés dans
+  ~/.claude/skills. Conçus pour ChatGPT/Codex (chemin voix ~/.codex/youtube/voice.md) ; compatibilité Claude Code
+  non testée. Pas d'appel réseau/subprocess détecté par grep.
