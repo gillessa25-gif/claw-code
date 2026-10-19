@@ -19,3 +19,9 @@ Résultat : NON CONFIRMÉ par les preuves accessibles.
 - Session « Format adaptation Instagram Pinterest TikTok » (2026-09-13/14) : seuls 54 derniers événements lus ; ils concernent une app web (naiom-platform), avec un simple exemple de prompt « hooks Instagram ». Pas de preuve d'automatisation publiée. Début de session non lu.
 - Limites : connecteur Zapier KO dans cette session (403) → Zaps éventuels non vérifiables ; je n'ai pas de mémoire des sessions passées.
 - Idée à vérifier : demander à l'utilisateur le nom de la routine/Zap, ou une capture.
+
+## Zapier MCP (vérifié 2026-10-19, outils mcp__Zapier__ fonctionnels dans cette session)
+- Apps activées : YouTube, Gmail, Google Drive, Todoist, ElevenLabs, LinkedIn. AUCUNE app Instagram ni TikTok activée → aucune automatisation Instagram/TikTok possible via ce Zapier MCP actuellement.
+- Skills Zapier enregistrés : onboarding, mcp-roast, hooded-lifter-content-readiness-brief. Rien sur Instagram/TikTok.
+- Catalogue (non activé) : « Instagram for Business » (2 lectures, 3 écritures) ; TikTok = seulement Lead Generation et Conversions (pub), PAS de publication de vidéos.
+- Limite : ce MCP n'expose pas la liste des Zaps classiques de l'éditeur Zapier.
