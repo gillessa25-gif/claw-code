@@ -1,7 +1,7 @@
 # SAUVEGARDE — Vidéo hype Promylaia 30 s
 
 > Fichier de reprise : relire en début de chaque nouvelle session avant de toucher à la vidéo.
-> Dernière mise à jour : 2026-10-21 (vidéo placée tout en haut du héro du site, en attente de mise en ligne IONOS).
+> Dernière mise à jour : 2026-10-21 (vidéo pleine largeur sous le menu + Instagram gilless_ai, en attente de mise en ligne IONOS).
 
 ## État
 - ✅ 3 vidéos rendues et vérifiées (30,00 s, 30 i/s, 900 images, H.264 + AAC, crête audio −2 dBFS, aucune saturation) :
@@ -67,3 +67,11 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Vérifié : 0 erreur, 14 icônes flèche (identique à l'original), chargement direct et navigation /cgv → / OK, lecture auto muette OK.
 - Conséquence sur ordinateur (1440×900) : la vidéo occupe presque tout le premier écran et le titre « Des agents IA qui travaillent pour vous » passe sous la ligne de flottaison ; le bouton « Réserver un appel » du menu reste visible.
 - Zip à envoyer sur IONOS mis à jour (mêmes 6 fichiers).
+
+### Mise à jour : vidéo pleine largeur + Instagram (2026-10-21)
+- La vidéo est sortie du bloc centré : c'est maintenant le 1er enfant de `<main>`, pleine largeur d'un bord à l'autre, juste sous le menu, sans coins arrondis ni bordure. Le héro a retrouvé son espacement d'origine (`pt-16 md:pt-20`).
+- Références RSC recalées pour cette structure : `$6:props:children:1:props:children:0:…` et `$0:data:0:rsc:props:children:0:2:props:children:1:props:children:0:…` (12 par fichier).
+- Instagram : `instagram.com/gilless.immo/` → `instagram.com/gilless_ai/` dans les 16 fichiers des 4 pages (accueil, CGV, confidentialité, mentions légales ; HTML + payloads). Plus aucune mention de `gilless.immo`.
+- Vérifié (1440, 1920, 390 px) : largeur = largeur de l'écran, aucun défilement horizontal, 0 erreur, 14 icônes (comme l'original), lien Instagram correct sur les 4 pages. La navigation accueil → /cgv donne un résultat vide en local, **identique sur le site d'origine** (limite du serveur de test local, pas de la modification).
+- Hauteur : 16:9 en pleine largeur = 810 px sur un écran de 1440 px ; le titre est sous la ligne de flottaison sur ordinateur.
+- Zip IONOS : `promylaia-site-ionos.zip`, **18 fichiers** (il remplace `promylaia-hero-video-ionos.zip`).
