@@ -1,7 +1,7 @@
 # SAUVEGARDE — Vidéo hype Promylaia 30 s
 
 > Fichier de reprise : relire en début de chaque nouvelle session avant de toucher à la vidéo.
-> Dernière mise à jour : 2026-10-21.
+> Dernière mise à jour : 2026-10-21 (vidéo ajoutée au héro du site, en attente de mise en ligne IONOS).
 
 ## État
 - ✅ 3 vidéos rendues et vérifiées (30,00 s, 30 i/s, 900 images, H.264 + AAC, crête audio −2 dBFS, aucune saturation) :
@@ -50,3 +50,13 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Pas de voix off (non demandée). Musique synthétique maison, aucun droit à gérer ; elle n'a pas été écoutée par un humain : à valider à l'oreille.
 - Pas de sous-titres nécessaires : tout le message est déjà à l'écran.
 - Zone de sécurité Reels : contenu clé entre ~11 % et ~76 % de la hauteur en 9:16 (la légende Instagram couvre le bas).
+
+## Étape 2 — Vidéo dans le héro de promylaia.fr (2026-10-21)
+- Demande de Gilles : ajouter la vidéo 16:9, **sans son**, dans le héro du site.
+- Fait dans l'export du site (repo `Websits`, branche `claude/elegant-tesla-14u1gl`, PAS `main`) :
+  - `promylaia/hero/promylaia-hero-16x9.mp4` (1920×1080, H.264, **aucune piste audio**, 2,3 Mo) + `promylaia-hero-poster.jpg` (dernière image).
+  - Vidéo insérée entre le bloc titre/« Trouver le bon agent IA » et la bande « Le type d'entreprises… » : `autoplay muted loop playsinline`, coins arrondis.
+  - Insérée **aux 4 endroits** que Next.js utilise : HTML de `index.html`, payload React inline de `index.html`, `index.txt`, `__next.__PAGE__.txt`, `__next._full.txt`. Sinon React l'efface à l'hydratation ou à la navigation.
+- Vérifié en local (Chromium) : vidéo présente après hydratation, rendue par React, 0 erreur console, navigation /cgv → / OK, lecture auto muette OK (test avec une copie VP9, car ce Chromium ne lit pas le H.264).
+- ❌ **PAS en ligne** : aucun accès IONOS ni à promylaia.fr depuis l'environnement cloud. À faire par Gilles : envoyer les 6 fichiers du zip `promylaia-hero-video-ionos.zip` à la racine du site sur IONOS (FTP / gestionnaire de fichiers), en conservant `hero/`.
+- ⚠️ Non vérifié : que l'export du repo soit identique au site en ligne. Si le site a été modifié sur IONOS depuis l'export, envoyer `index.html` écraserait ces modifications.
