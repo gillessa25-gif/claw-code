@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Promylaia Hype 30s</title>
+<style>
+  @font-face { font-family: SG; src: url(assets/fonts/SpaceGrotesk-latin.woff2) format("woff2"); font-weight: 300 700; }
+  @font-face { font-family: IN; src: url(assets/fonts/Inter-latin.woff2) format("woff2"); font-weight: 100 900; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #17123a; }
+  #cam { position: absolute; inset: 0; }
+  .L { position: absolute; inset: 0; visibility: hidden; }
+  .pan { position: absolute; inset: -25%; }
+  .abs { position: absolute; }
+  .row { position: absolute; left: 0; text-align: center; white-space: nowrap; }
+  .box { display: inline-block; }
+  .sg { font-family: SG; font-weight: 700; letter-spacing: -0.035em; line-height: 1; }
+  .in { font-family: IN; line-height: 1.1; }
+  .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.04em 0.03em 0.1em; margin: -0.04em -0.03em -0.1em; }
+  .wi, .ch { display: inline-block; }
+  .pill { border-radius: 0.32em; padding: 0.02em 0.16em 0.06em; }
+  .disc { border-radius: 50%; }
+</style>
+</head>
+<body>
+<div id="cam"></div>
+<script>
+// ---------------------------------------------------------------------------
+// Promylaia — vidéo hype 30 s. render(t) est une fonction pure du temps :
+// chaque image est reproductible et les trois formats partagent la même timeline.
+// ---------------------------------------------------------------------------
+const P = { navyDeep: "#17123a", navy: "#241c55", indigo: "#5b3df5", lav: "#e0dcf7",
+            lavL: "#ece9fa", bg: "#f6f5fb", coral: "#ff6a4d", white: "#ffffff" };
+const W = innerWidth, H = innerHeight, U = Math.min(W, H) / 100;
+const FMT = new URLSearchParams(location.search).get("fmt") || (W / H < 0.8 ? "v" : W / H > 1.3 ? "h" : "s");
+const V = FMT === "v", HZ = FMT === "h";
+const MAXW = W * (HZ ? 0.8 : 0.86);
+const cam = document.getElementById("cam");
+
+// --- utilitaires -------------------------------------------------------------
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const pr = (t, a, b) => cl((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const oE = p => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const oC = p => 1 - Math.pow(1 - p, 3);
+const iC = p => p * p * p;
+const ioC = p => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const oB = p => { const c = 1.70158; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+const hit = (t, t0, d = 0.08) => (t >= t0 ? Math.exp(-(t - t0) / d) : 0);
+const kickPulse = t => Math.exp(-(((t % 0.5) + 0.5) % 0.5) / 0.07);
+
+function el(tag, cls, parent, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  parent.appendChild(e);
+  return e;
+}
+function css(e, o) { Object.assign(e.style, o); return e; }
+function layer(bg) {
+  const L = el("div", "L", cam);
+  if (bg) css(el("div", "pan", L), { background: bg });
+  return L;
+}
+// Ligne de texte centrée horizontalement ; y = centre vertical.
+function row(parent, y, size, cls, color, x = 0, w = W) {
+  const r = el("div", "row " + cls, parent);
+  css(r, { top: y + "px", left: x + "px", width: w + "px", fontSize: size + "px", color });
+  const box = el("span", "box", r);
+  return { r, box, y, get size() { return parseFloat(r.style.fontSize); } };
+}
+function place(line, extra = "") {
+  line.r.style.transform = `translateY(-50%) ${extra}`;
+}
+function fit(line, maxW, maxSize) {
+  const s = parseFloat(line.r.style.fontSize);
+  const ns = Math.min(maxSize, (s * maxW) / line.box.offsetWidth);
+  line.r.style.fontSize = ns + "px";
+  return ns;
+}
+function setSize(line, s) { line.r.style.fontSize = s + "px"; }
+// Mots masqués (révélation par le bas). Un segment "[...]" devient une pastille.
+function words(line, text, pillStyle) {
+  const out = [];
+  const parts = text.match(/\[[^\]]+\]|\S+/g);
+  parts.forEach((w, i) => {
+    const m = el("span", "w", line.box);
+    let inner;
+    if (w.startsWith("[")) {
+      inner = el("span", "wi pill", m, w.slice(1, -1));
+      css(inner, pillStyle || {});
+    } else inner = el("span", "wi", m, w);
+    out.push(inner);
+    if (i < parts.length - 1) line.box.appendChild(document.createTextNode(" "));
+  });
+  return out;
+}
+function chars(line, text) {
+  return [...text].map(c => el("span", "ch", line.box, c === " " ? "&nbsp;" : c));
+}
+function reveal(ws, t, t0, stagger = 0.07, dur = 0.32, from = 110) {
+  ws.forEach((w, i) => {
+    const p = oE(pr(t, t0 + i * stagger, t0 + i * stagger + dur));
+    w.style.transform = `translateY(${(1 - p) * from}%)`;
+  });
+}
+function rectOf(e) { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; }
+
+let BG = P.navyDeep;
+const CAM = { s: 1, r: 0, x: 0, y: 0, ox: W / 2, oy: H / 2 };
+const scenes = [];
+function scene(a, b, L, update) { scenes.push({ a, b, L, update }); }
+
+function build() {
+// =============================================================================
+// 1 · ACCROCHE (0–2 s) — « STOP au travail inutile. »
+// =============================================================================
+{
+  const L = layer();
+  const stop = row(L, H * (V ? 0.43 : 0.4), H * 0.4, "sg", P.white);
+  const cs = chars(stop, "STOP");
+  fit(stop, W * (HZ ? 0.62 : 0.8), H * (V ? 0.4 : 0.44));
+  const S = stop.size;
+  const l2 = row(L, stop.y + S * 0.72, S * 0.2, "sg", P.white);
+  const w2 = words(l2, "au travail inutile.");
+  fit(l2, stop.box.offsetWidth * 0.92, S * 0.24);
+  w2[2].style.color = P.coral;
+  place(stop); place(l2);
+  const r = rectOf(w2[2]);
+  const bar = css(el("div", "abs", L), { left: r.x + "px", top: r.y + r.h * 0.96 + "px", width: r.w * 0.96 + "px",
+    height: l2.size * 0.12 + "px", background: P.coral, transformOrigin: "0 50%", borderRadius: "99px" });
+
+  scene(0, 2.0, L, t => {
+    const flash = t < 0.1;
+    BG = flash ? P.coral : P.navyDeep;
+    stop.r.style.color = flash ? P.navyDeep : P.white;
+    const s = lerp(1.14, 1, oE(pr(t, 0, 0.34))) * (1 + 0.06 * hit(t, 1.0, 0.09));
+    const sh = 1.8 * U * hit(t, 0, 0.13) * Math.sin(t * 97) + 0.8 * U * hit(t, 1.0, 0.08) * Math.sin(t * 120);
+    place(stop, `translate(${sh}px, ${sh * 0.5}px) scale(${s})`);
+    cs.forEach((c, i) => { c.style.transform = `translateY(${(1 - oE(pr(t, i * 0.025, i * 0.025 + 0.25))) * 0.25}em)`; });
+    reveal([w2[0]], t, 0.45); reveal([w2[1]], t, 0.6); reveal([w2[2]], t, 1.0, 0, 0.26);
+    bar.style.transform = `scaleX(${oE(pr(t, 1.06, 1.36))})`;
+    const ex = iC(pr(t, 1.72, 2.0));
+    CAM.s = (1 + 3.2 * ex) * (1 + 0.015 * hit(t, 1.0));
+    L.style.opacity = 1 - pr(t, 1.86, 2.0);
+  });
+}
+
+// =============================================================================
+// 2 · LES CORVÉES (2–8 s) — typographie cinétique, une corvée barrée par temps
+// =============================================================================
+{
+  const items = [
+    { a: "Les", b: "relances", bg: P.navyDeep, fg: P.white, st: P.coral },
+    { a: "Les", b: "devis", bg: P.lav, fg: P.navy, st: P.coral },
+    { a: "La", b: "saisie", bg: P.coral, fg: P.navyDeep, st: P.navyDeep },
+    { a: "Le tri des", b: "e-mails", bg: P.navyDeep, fg: P.lav, st: P.coral },
+    { a: "Les", b: "plannings", bg: P.indigo, fg: P.white, st: P.coral },
+    { a: "Le", b: "reporting", bg: P.lavL, fg: P.navyDeep, st: P.indigo },
+  ];
+  items.forEach((it, i) => {
+    const L = layer(it.bg);
+    const lab = row(L, H * (V ? 0.25 : 0.17), U * (V ? 3.6 : 2.8), "in", it.fg);
+    lab.box.textContent = "ENCORE À LA MAIN ?";
+    css(lab.r, { fontWeight: 700, letterSpacing: "0.32em", opacity: 0.7 });
+    const big = row(L, H * (V ? 0.52 : 0.55), H * 0.3, "sg", it.fg);
+    const cs = chars(big, it.b);
+    fit(big, MAXW, V ? W * 0.3 : H * 0.34);
+    const S = big.size;
+    const art = row(L, big.y - S * 0.72, Math.max(U * 4.2, S * 0.24), "in", it.fg);
+    css(art.r, { fontWeight: 600 });
+    const aw = words(art, it.a);
+    place(big); place(art); place(lab);
+    const r = rectOf(big.box);
+    const strike = css(el("div", "abs", L), { left: r.x - S * 0.05 + "px", top: r.cy + S * 0.1 + "px", width: r.w + S * 0.1 + "px",
+      height: S * 0.11 + "px", background: it.st, transformOrigin: "0 50%", borderRadius: "99px" });
+    const dir = i % 2 ? -1 : 1;
+    scene(2 + i, 3 + i, L, t => {
+      const u = t - (2 + i);
+      BG = it.bg;
+      cs.forEach((c, j) => {
+        const p = oE(pr(u, 0.022 * j, 0.022 * j + 0.3));
+        c.style.transform = `translateY(${dir * (1 - p) * 0.75}em) rotate(${dir * (1 - p) * 14}deg)`;
+        c.style.opacity = cl(p * 1.6);
+      });
+      reveal(aw, u, 0.0, 0.05, 0.26);
+      big.box.style.opacity = 1 - 0.5 * pr(u, 0.56, 0.72);
+      strike.style.transform = `translateY(-50%) rotate(-3deg) scaleX(${oE(pr(u, 0.5, 0.7))})`;
+      place(big, `scale(${1 + 0.035 * kickPulse(t)})`);
+      CAM.s = 1 + 0.012 * kickPulse(t);
+      CAM.r = dir * 0.8 * (1 - oE(pr(u, 0, 0.4)));
+    });
+  });
+}
+
+// Point indigo (le point du logo) : fil rouge des scènes 3, 4, 5, 8 et 9.
+const DOT = { x: W / 2, y: H * (V ? 0.34 : 0.27), r: U * 2.3 };
+
+// =============================================================================
+// 3 · JEU DE FORMES (8–10 s) — les tâches se rassemblent en un seul point
+// =============================================================================
+{
+  const L = layer();
+  const l1 = row(L, H * (V ? 0.22 : 0.17), 100, "sg", P.white);
+  const w1 = words(l1, "Et si tout ça");
+  const l2 = row(L, 0, 100, "sg", P.white);
+  const w2 = words(l2, "se faisait [tout seul ?]", { background: P.indigo, color: P.white });
+  const S = fit(l2, MAXW, V ? W * 0.12 : H * 0.11);
+  setSize(l1, S);
+  l2.r.style.top = l1.y + S * 1.12 + "px";
+  place(l1); place(l2);
+
+  const names = ["Relances", "Devis", "Saisie", "E-mails", "Plannings", "Reporting"];
+  const cols = [P.lav, P.coral, P.indigo, P.lavL, P.coral, P.lav];
+  const tc = [P.navy, P.navyDeep, P.white, P.navy, P.navyDeep, P.navy];
+  const perRow = HZ ? 6 : 3;
+  const T = HZ ? H * 0.17 : V ? W * 0.23 : H * 0.17;
+  const G = T * 0.16;
+  const cy0 = H * (V ? 0.62 : HZ ? 0.66 : 0.64);
+  const tiles = names.map((n, i) => {
+    const c = i % perRow, rr = Math.floor(i / perRow), rows = Math.ceil(6 / perRow);
+    const x = W / 2 + (c - (perRow - 1) / 2) * (T + G);
+    const y = cy0 + (rr - (rows - 1) / 2) * (T + G);
+    const d = css(el("div", "abs", L), { left: "0px", top: "0px", width: T + "px", height: T + "px", background: cols[i],
+      display: "flex", alignItems: "center", justifyContent: "center" });
+    const lb = css(el("span", "in", d, n), { fontWeight: 700, fontSize: T * 0.14 + "px", color: tc[i] });
+    return { d, lb, x, y };
+  });
+  const hexToRgb = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16));
+  const mixC = (a, b, p) => { const A = hexToRgb(a), B = hexToRgb(b); return `rgb(${A.map((v, k) => Math.round(lerp(v, B[k], p))).join(",")})`; };
+
+  scene(8, 10, L, t => {
+    BG = P.navyDeep;
+    reveal(w1, t, 8.0, 0.08); reveal(w2, t, 8.4, 0.1);
+    const out = oC(pr(t, 9.0, 9.3));
+    place(l1, `translateY(${-out * 40}%)`); place(l2, `translateY(${-out * 40}%)`);
+    l1.r.style.opacity = l2.r.style.opacity = 1 - out;
+    const m = ioC(pr(t, 9.0, 9.72));
+    tiles.forEach((o, i) => {
+      const pin = oB(pr(t, 8.05 + i * 0.07, 8.05 + i * 0.07 + 0.34));
+      const size = lerp(T, DOT.r * 2, m);
+      const x = lerp(o.x, DOT.x, m), y = lerp(o.y, DOT.y, m);
+      const rot = lerp(0, 180 + i * 40, m) + (1 - pin) * 30;
+      css(o.d, { width: size + "px", height: size + "px", borderRadius: lerp(18, 50, m) + "%",
+        background: mixC(cols[i], P.indigo, m),
+        transform: `translate(${x - size / 2}px, ${y - size / 2}px) rotate(${rot}deg) scale(${pin * (1 + 0.04 * kickPulse(t) * (1 - m))})` });
+      o.lb.style.opacity = 1 - pr(t, 8.95, 9.15);
+    });
+    CAM.s = 1 + 0.012 * kickPulse(t) * (1 - m);
+  });
+}
+
+// =============================================================================
+// 4 · BREAKDOWN (10–12 s) — « Nous ne vendons pas de l'IA. »
+// =============================================================================
+{
+  const L = layer();
+  const dot = css(el("div", "abs disc", L), { left: DOT.x - DOT.r + "px", top: DOT.y - DOT.r + "px",
+    width: DOT.r * 2 + "px", height: DOT.r * 2 + "px", background: P.indigo, boxShadow: `0 0 ${U * 4}px ${P.indigo}` });
+  const yb = H * (V ? 0.5 : 0.52);
+  const l1 = row(L, yb, 100, "sg", P.white);
+  const w1 = words(l1, "Nous ne vendons pas");
+  const S = fit(l1, MAXW, V ? W * 0.13 : H * 0.12);
+  const l2 = row(L, yb + S * 1.1, S, "sg", P.lav);
+  const w2 = words(l2, "de l’IA.");
+  place(l1); place(l2);
+
+  scene(10, 12, L, t => {
+    BG = P.navyDeep;
+    const g = pr(t, 10, 12);
+    dot.style.transform = `scale(${1 + 0.9 * g * g + 0.35 * hit(t, 10, 0.12) + 0.35 * hit(t, 11, 0.12)})`;
+    reveal([w1[0]], t, 10.0); reveal([w1[1]], t, 10.25); reveal([w1[2]], t, 10.5); reveal([w1[3]], t, 10.75);
+    reveal(w2, t, 11.0, 0.12);
+    const f = pr(t, 11.82, 12.0);
+    l1.r.style.opacity = l2.r.style.opacity = 1 - f;
+    CAM.s = 1 + 0.1 * ioC(g);
+    CAM.r = 1.4 * ioC(g);
+    CAM.ox = DOT.x; CAM.oy = DOT.y;
+  });
+}
+
+// =============================================================================
+// 5 · DROP (12–14,4 s) — le point explose : « Nous supprimons du travail inutile. »
+// =============================================================================
+{
+  const L = layer();
+  const wipe = css(el("div", "abs disc", L), { background: P.indigo });
+  const cy = H * (V ? 0.5 : 0.5);
+  const l1 = row(L, 0, 100, "sg", P.white);
+  const w1 = words(l1, "Nous supprimons");
+  const S = fit(l1, MAXW, V ? W * 0.14 : H * 0.15);
+  const l2 = row(L, 0, S, "sg", P.white); words(l2, "du travail");
+  const l3 = row(L, 0, S, "sg", P.navyDeep); words(l3, "[inutile.]", { background: P.coral });
+  const gap = S * 1.16;
+  [l1, l2, l3].forEach((l, i) => { l.r.style.top = cy + (i - 1) * gap + "px"; l.y = cy + (i - 1) * gap; });
+  [l1, l2, l3].forEach(l => place(l));
+  const Rmax = Math.hypot(Math.max(DOT.x, W - DOT.x), Math.max(DOT.y, H - DOT.y)) * 1.05;
+
+  scene(12, 14.4, L, t => {
+    const p = oE(pr(t, 12.0, 12.38));
+    const R = lerp(DOT.r * 2.4, Rmax, p);
+    css(wipe, { left: DOT.x - R + "px", top: DOT.y - R + "px", width: 2 * R + "px", height: 2 * R + "px" });
+    BG = t > 12.4 ? P.indigo : P.navyDeep;
+    [l1, l2, l3].forEach((l, i) => {
+      const t0 = 12.05 + i * 0.25;
+      const q = oE(pr(t, t0, t0 + 0.3));
+      l.r.style.opacity = pr(t, t0, t0 + 0.06);
+      l.box.querySelectorAll(".wi").forEach(w => (w.style.transform = "none"));
+      const sh = (i === 2 ? 1.4 : 0.6) * U * hit(t, t0, 0.1) * Math.sin(t * 110);
+      place(l, `translate(${sh}px, 0) scale(${lerp(1.7, 1, q)})`);
+    });
+    const c = oE(pr(t, 12.0, 12.7));
+    CAM.r = lerp(-4, 0, c);
+    CAM.s = lerp(1.14, 1, c) * (1 + 0.012 * kickPulse(t)) * (1 + 0.03 * pr(t, 12.7, 14));
+  });
+}
+
+// =============================================================================
+// 6 · LES AGENTS (14–20 s) — travelling caméra sur l'équipe
+// =============================================================================
+{
+  const L = layer(P.lavL);
+  const blob = css(el("div", "abs disc", L), { width: W * 1.1 + "px", height: W * 1.1 + "px",
+    background: `radial-gradient(circle, rgba(91,61,245,0.28) 0%, rgba(91,61,245,0) 65%)` });
+  const hy = H * (V ? 0.11 : 0.1);
+  let h1, h2, hw1, hw2, HS;
+  if (HZ) {
+    h1 = row(L, hy, 100, "sg", P.navyDeep);
+    hw1 = words(h1, "Des agents IA qui travaillent [pour vous.]", { background: P.indigo, color: P.white });
+    HS = fit(h1, W * 0.76, U * 7);
+    hw2 = []; place(h1);
+  } else {
+    h1 = row(L, hy, 100, "sg", P.navyDeep);
+    hw1 = words(h1, "Des agents IA qui");
+    h2 = row(L, 0, 100, "sg", P.navyDeep);
+    hw2 = words(h2, "travaillent [pour vous.]", { background: P.indigo, color: P.white });
+    HS = fit(h2, MAXW, V ? W * 0.1 : H * 0.085);
+    setSize(h1, HS);
+    h2.r.style.top = hy + HS * 1.12 + "px";
+    place(h1); place(h2);
+  }
+  const agents = [
+    ["kai", "Kai", "Commercial IA"], ["nova", "Nova", "Créatrice de contenu IA"], ["zeno", "Zeno", "Support client IA"],
+    ["yuki", "Yuki", "Coordinatrice RH IA"], ["raiden", "Raiden", "Setter & Closer IA"], ["vega", "Vega", "Assistante de direction IA"],
+  ];
+  const D = V ? W * 0.6 : H * (HZ ? 0.42 : 0.4);
+  const SP = D * 1.3;
+  const cy = H * (V ? 0.42 : HZ ? 0.47 : 0.49);
+  const Ds = HZ ? Math.min((W * 0.72) / 6 / 1.14, H * 0.24) : (W * 0.86) / 6 / 1.14;
+  const cards = agents.map(([k, n, role]) => {
+    const c = css(el("div", "abs", L), { left: W / 2 - D / 2 + "px", top: cy - D / 2 + "px", width: D + "px", height: D + "px", transformOrigin: "50% 50%" });
+    const ring = css(el("div", "abs disc", c), { inset: -D * 0.035 + "px", border: `${D * 0.012}px solid ${P.coral}` });
+    const ph = css(el("div", "abs disc", c), { inset: "0px", border: `${D * 0.03}px solid #fff`, overflow: "hidden",
+      boxShadow: `0 ${D * 0.05}px ${D * 0.12}px rgba(23,18,58,0.28)`, background: P.lav });
+    css(el("img", "", ph), { width: "100%", height: "100%", objectFit: "cover", display: "block" }).src = `assets/agents/${k}.jpg`;
+    const nm = css(el("div", "sg abs", c, n), { left: "-50%", width: "200%", textAlign: "center", top: D * 1.07 + "px",
+      fontSize: D * 0.19 + "px", color: P.navyDeep });
+    const rl = css(el("div", "in abs", c), { left: "-50%", width: "200%", textAlign: "center", top: D * 1.33 + "px" });
+    css(el("span", "pill", rl, role), { background: P.navyDeep, color: P.white, fontWeight: 600, fontSize: D * 0.062 + "px",
+      padding: `${D * 0.018}px ${D * 0.05}px`, borderRadius: "99px", display: "inline-block" });
+    const mini = css(el("div", "in abs", L, n), { width: Ds * 2 + "px", textAlign: "center", fontWeight: 700,
+      fontSize: Ds * 0.2 + "px", color: P.navyDeep, top: cy + Ds * 0.62 + "px" });
+    return { c, nm, rl, mini };
+  });
+  const capY = cy + Ds * 0.62 + Ds * 0.2 + H * (V ? 0.1 : 0.1);
+  const cap1 = row(L, capY, 100, "sg", P.navyDeep);
+  let capW;
+  if (V) {
+    capW = words(cap1, "6 agents.");
+    const cap2 = row(L, 0, 100, "sg", P.indigo);
+    capW = capW.concat(words(cap2, "Chacun son métier."));
+    const cs = fit(cap2, MAXW * 0.8, W * 0.1);
+    setSize(cap1, cs);
+    cap2.r.style.top = capY + cs * 1.1 + "px";
+    place(cap1); place(cap2);
+  } else {
+    capW = words(cap1, "6 agents. Chacun son métier.");
+    fit(cap1, MAXW * 0.8, H * 0.07);
+    capW.slice(2).forEach(w => (w.style.color = P.indigo));
+    place(cap1);
+  }
+  const T0 = 14.5, STEP = 0.75;
+  scene(14, 20, L, t => {
+    BG = P.lavL;
+    const X = lerp(-40, 140, oE(pr(t, 14.0, 14.38)));
+    L.style.clipPath = `polygon(-30% -30%, ${X}% -30%, ${X - 40}% 130%, -30% 130%)`;
+    reveal(hw1, t, 14.1, 0.06); reveal(hw2, t, 14.3, 0.08);
+    let f = lerp(-1.4, 0, oE(pr(t, 14.0, T0)));
+    for (let i = 1; i < 6; i++) f += oE(pr(t, T0 + i * STEP - 0.12, T0 + i * STEP + 0.22));
+    const z = oE(pr(t, 19.0, 19.6));
+    const c = lerp(f, 2.5, z);
+    const Deff = lerp(D, Ds, z), SPe = lerp(SP, Ds * 1.14, z);
+    cards.forEach((o, i) => {
+      const a = cl(1 - Math.abs(i - f));
+      const sc = lerp(0.7 + 0.3 * a, 1, z) * (Deff / D) * (1 + 0.025 * kickPulse(t) * a * (1 - z));
+      const x = (i - c) * SPe;
+      const lift = (1 - a) * D * 0.05 * (1 - z);
+      o.c.style.transform = `translate(${x}px, ${lift}px) scale(${sc})`;
+      o.c.style.opacity = lerp(0.4 + 0.6 * a, 1, z);
+      o.nm.style.opacity = o.rl.style.opacity = a * a * (1 - z);
+      o.nm.style.transform = `translateY(${(1 - a) * 30}%)`;
+      css(o.mini, { left: W / 2 + x - Ds + "px", opacity: pr(z, 0.5, 1) });
+    });
+    reveal(capW, t, 19.25, 0.08);
+    blob.style.transform = `translate(${W * 0.35 - (f + 1.4) * W * 0.05}px, ${-W * 0.35}px)`;
+    CAM.s = 1 + 0.008 * kickPulse(t);
+    CAM.r = Math.sin(t * 1.3) * 0.6 * (1 - z);
+    CAM.y = Math.sin(t * 2.1) * U * 0.5 * (1 - z);
+  });
+}
+
+// =============================================================================
+// 7 · CHANGEMENTS DE COULEUR (20–24 s) — l'offre en quatre temps
+// =============================================================================
+{
+  const cards = [
+    { pre: "", lines: ["Plug & play."], sub: "Des agents prêts à l’emploi.", bg: P.navyDeep, fg: P.white, ac: P.indigo, sc: P.lav, wipe: "circle" },
+    { pre: "", lines: ["Sur mesure."], sub: "Des automatisations taillées pour vos process.", bg: P.coral, fg: P.navyDeep, ac: P.navyDeep, sc: P.navyDeep, wipe: "slice" },
+    { pre: "", lines: ["Branchés sur", "vos outils."], sub: "CRM, e-mail, agenda, WhatsApp…", bg: P.lav, fg: P.navy, ac: P.indigo, sc: P.navy, wipe: "split" },
+    { pre: "Un agent opérationnel en", lines: ["1 à 2", "semaines."], sub: "", bg: P.indigo, fg: P.white, ac: P.white, sc: P.lav, wipe: "corner" },
+  ];
+  cards.forEach((cd, k) => {
+    const L = layer(cd.bg);
+    // forme décorative
+    const shp = el("div", "abs", L);
+    const Z = Math.max(W, H);
+    if (k === 0) css(shp, { width: Z * 0.62 + "px", height: Z * 0.62 + "px", left: W * 0.62 + "px", top: -Z * 0.12 + "px",
+      borderRadius: "50%", border: `${Z * 0.045}px solid ${cd.ac}`, borderLeftColor: "transparent", borderBottomColor: "transparent" });
+    if (k === 1) {
+      css(shp, { width: Z * 0.4 + "px", height: Z * 0.4 + "px", left: -Z * 0.1 + "px", top: H - Z * 0.28 + "px" });
+      [0, 90].forEach(a => css(el("div", "abs", shp), { left: "40%", top: "0", width: "20%", height: "100%", background: P.navyDeep,
+        opacity: 0.14, borderRadius: Z * 0.02 + "px", transform: `rotate(${a}deg)` }));
+    }
+    if (k === 2) {
+      css(shp, { left: W * (V ? 0.5 : HZ ? 0.84 : 0.8) + "px", top: H * (V ? 0.74 : 0.86) + "px", width: "0px", height: "0px" });
+      [0, 1, 2].forEach(j => css(el("div", "abs", shp), { width: U * 14 + "px", height: U * 14 + "px", left: (j - 1.5) * U * 16 + "px",
+        top: -U * 7 + "px", border: `${U * 1.6}px solid ${P.indigo}`, borderRadius: U * 4 + "px", opacity: 0.85 }));
+    }
+    if (k === 3) css(shp, { left: W / 2 + "px", top: H * 0.5 + "px", width: "0px", height: "0px" });
+    const rings = k === 3 ? [0, 1, 2, 3].map(() => css(el("div", "abs disc", shp), { border: `${U * 0.5}px solid rgba(255,255,255,0.22)` })) : [];
+
+    const cy = H * (V ? 0.47 : 0.48);
+    const ls = cd.lines.map(s => row(L, 0, 100, "sg", cd.fg));
+    const ws = ls.map((l, i) => words(l, cd.lines[i]));
+    const S = Math.min(...ls.map(l => fit(l, MAXW, V ? W * (k === 3 ? 0.3 : 0.2) : H * (k === 3 ? 0.3 : 0.22))));
+    ls.forEach(l => setSize(l, S));
+    const top0 = cy - ((ls.length - 1) * S * 1.02) / 2;
+    ls.forEach((l, i) => { l.r.style.top = top0 + i * S * 1.02 + "px"; place(l); });
+    if (k === 3) ws[0].forEach(w => (w.style.color = P.white));
+    let pre, sub;
+    if (cd.pre) {
+      pre = row(L, top0 - S * 0.82, Math.max(U * 4.2, S * 0.17), "in", cd.sc);
+      pre.box.textContent = cd.pre; css(pre.r, { fontWeight: 600 }); place(pre);
+    }
+    if (cd.sub) {
+      sub = row(L, top0 + (ls.length - 1) * S * 1.02 + S * 0.86, U * (V ? 4.4 : 3.6), "in", cd.sc);
+      sub.box.textContent = cd.sub; css(sub.r, { fontWeight: 500 });
+      fit(sub, MAXW, U * (V ? 4.4 : 3.6)); place(sub);
+    }
+    const t0 = 20 + k;
+    scene(t0, 24, L, t => {
+      const u = t - t0;
+      BG = k === 0 ? cd.bg : BG;
+      const p = oE(pr(u, 0, 0.32));
+      let clip;
+      if (cd.wipe === "circle") clip = `circle(${p * 150}% at 50% 50%)`;
+      if (cd.wipe === "slice") { const X = lerp(-60, 160, p); clip = `polygon(-10% -10%, ${X}% -10%, ${X - 60}% 110%, -10% 110%)`; }
+      if (cd.wipe === "split") clip = `inset(${50 - 50 * p}% -10% ${50 - 50 * p}% -10%)`;
+      if (cd.wipe === "corner") clip = `circle(${p * 160}% at 100% 100%)`;
+      L.style.clipPath = clip;
+      ws.forEach((w, i) => reveal(w, u, 0.06 + i * 0.12, 0.07, 0.34));
+      if (k === 3) ls.forEach((l, i) => place(l, `scale(${i === 0 ? lerp(1.35, 1, oE(pr(u, 0.06, 0.42))) : 1})`));
+      else ls.forEach(l => place(l, `scale(${1 + 0.03 * kickPulse(t)})`));
+      if (pre) pre.r.style.opacity = pr(u, 0.02, 0.18);
+      if (sub) { sub.r.style.opacity = pr(u, 0.3, 0.5); place(sub, `translateY(${(1 - oE(pr(u, 0.3, 0.6))) * 40}%)`); }
+      const sp = oB(pr(u, 0, 0.45));
+      if (k === 0) shp.style.transform = `rotate(${t * 140}deg) scale(${sp})`;
+      if (k === 1) shp.style.transform = `rotate(${45 + u * 90}deg) scale(${sp})`;
+      if (k === 2) shp.style.transform = `translateX(${-u * U * 10}px) scale(${sp})`;
+      rings.forEach((r, j) => {
+        const q = ((u * 1.1 + j * 0.25) % 1), R = q * Math.max(W, H) * 0.7;
+        css(r, { left: -R + "px", top: -R + "px", width: 2 * R + "px", height: 2 * R + "px", opacity: 1 - q });
+      });
+      CAM.s = lerp(1.07, 1, oE(pr(u, 0, 0.9))) * (1 + 0.01 * kickPulse(t));
+      CAM.r = (k % 2 ? 1 : -1) * 1.2 * (1 - oE(pr(u, 0, 0.6)));
+    });
+  });
+}
+
+// =============================================================================
+// 8 · BUILD (24–27 s) — « Moins de corvées. Plus de croissance. » puis plongée dans le point
+// =============================================================================
+const DOT2 = {};
+{
+  const L = layer();
+  const txt = V ? ["Moins de", "corvées.", "Plus de", "croissance"] : ["Moins de corvées.", "Plus de croissance"];
+  const ls = txt.map(() => row(L, 0, 100, "sg", P.white));
+  const ws = ls.map((l, i) => words(l, txt[i]));
+  const dotEl = css(el("span", "disc", ls[ls.length - 1].box), { display: "inline-block", width: "0.19em", height: "0.19em",
+    background: P.indigo, marginLeft: "0.05em", boxShadow: `0 0 0.25em ${P.indigo}` });
+  const S = Math.min(...ls.map(l => fit(l, MAXW, V ? W * 0.2 : H * 0.17)));
+  ls.forEach(l => setSize(l, S));
+  const gap = S * 1.04, cy = H * (V ? 0.48 : 0.5);
+  ls.forEach((l, i) => { l.r.style.top = cy + (i - (ls.length - 1) / 2) * gap + "px"; place(l); });
+  const corv = V ? ws[1][0] : ws[0][2];
+  const half = V ? 2 : 1;
+  ls.slice(0, half).forEach(l => (l.r.style.color = P.lav));
+  const r = rectOf(corv);
+  const strike = css(el("div", "abs", L), { left: r.x - S * 0.04 + "px", top: r.cy + S * 0.04 + "px", width: r.w + S * 0.06 + "px",
+    height: S * 0.1 + "px", background: P.coral, transformOrigin: "0 50%", borderRadius: "99px" });
+  const dr = rectOf(dotEl);
+  Object.assign(DOT2, { x: dr.cx, y: dr.cy, r: dr.w / 2 });
+  const dist = Math.hypot(Math.max(dr.cx, W - dr.cx), Math.max(dr.cy, H - dr.cy));
+
+  scene(24, 27, L, t => {
+    BG = P.navyDeep;
+    ws.slice(0, half).forEach((w, i) => reveal(w, t, 24.0 + i * 0.25, 0.1));
+    ws.slice(half).forEach((w, i) => reveal(w, t, 25.0 + i * 0.25, 0.1));
+    strike.style.transform = `translateY(-50%) rotate(-2deg) scaleX(${oE(pr(t, 24.55, 24.78))})`;
+    corv.style.opacity = 1 - 0.5 * pr(t, 24.6, 24.75);
+    dotEl.style.transform = `scale(${oB(pr(t, 25.5, 25.85))})`;
+    ls.slice(half).forEach(l => place(l, `scale(${1 + 0.05 * hit(t, 25.25, 0.12)})`));
+    const z = pr(t, 26.05, 27.0);
+    const Send = (dist * 1.1) / DOT2.r;
+    CAM.ox = DOT2.x; CAM.oy = DOT2.y;
+    CAM.s = Math.pow(Send, Math.pow(z, 2.2)) * (1 + 0.012 * kickPulse(t) * (1 - z));
+    CAM.x = (W / 2 - DOT2.x) * ioC(z);
+    CAM.y = (H / 2 - DOT2.y) * ioC(z);
+  });
+}
+
+// =============================================================================
+// 9 · PLAN FINAL (27–30 s) — le point devient le logo
+// =============================================================================
+{
+  const L = layer(P.bg);
+  const LS = V ? W * 0.34 : H * 0.26;
+  const lcy = H * (V ? 0.29 : 0.3);
+  const glow = css(el("div", "abs disc", L), { width: LS * 3 + "px", height: LS * 3 + "px", left: W / 2 - LS * 1.5 + "px", top: lcy - LS * 1.5 + "px",
+    background: "radial-gradient(circle, rgba(224,220,247,1) 0%, rgba(236,233,250,0.6) 40%, rgba(246,245,251,0) 70%)" });
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 40 40");
+  css(svg, { position: "absolute", left: W / 2 - LS / 2 + "px", top: lcy - LS / 2 + "px", width: LS + "px", height: LS + "px", overflow: "visible" });
+  L.appendChild(svg);
+  const paths = [
+    "M18 6 C11 6 6 11 6 18",
+    "M19 8 C14 8.5 10.5 12.5 10.5 18 C10.5 21 11.5 23.5 13 25.5",
+    "M20 10.5 C16.5 11.5 14.5 14.5 14.5 18.5 C14.5 22 16 25 18.5 27",
+    "M20.5 9 C25 9 28.5 12.5 29 17 C29.2 19 28.7 20.3 27.8 21.2 L28.6 23.3 L26.6 24 L26.3 26.4 C25.8 28.4 24 29.8 21.8 29.8 C19 29.8 16.7 27.9 16 25.2 L15.8 19 C15.8 13.5 17.6 9 20.5 9 Z",
+  ].map((d, i) => {
+    const p = document.createElementNS(svgNS, "path");
+    p.setAttribute("d", d); p.setAttribute("pathLength", "1");
+    Object.entries({ stroke: P.navy, "stroke-width": i === 3 ? 1.7 : 1.6, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none",
+      "stroke-dasharray": "1 1" }).forEach(([k, v]) => p.setAttribute(k, v));
+    svg.appendChild(p);
+    return p;
+  });
+  const knots = [[6, 18], [13, 25.5], [18.5, 27]].map(([x, y]) => {
+    const c = document.createElementNS(svgNS, "circle");
+    Object.entries({ cx: x, cy: y, r: 1.4, stroke: P.navy, "stroke-width": 1.3, fill: P.bg }).forEach(([k, v]) => c.setAttribute(k, v));
+    c.style.transformOrigin = `${x}px ${y}px`; c.style.transformBox = "view-box";
+    svg.appendChild(c);
+    return c;
+  });
+  const LDOT = { x: W / 2 - LS / 2 + (17.5 / 40) * LS, y: lcy - LS / 2 + (17.5 / 40) * LS, r: (2.3 / 40) * LS };
+  const ldot = css(el("div", "abs disc", L), { left: LDOT.x - LDOT.r + "px", top: LDOT.y - LDOT.r + "px", width: LDOT.r * 2 + "px",
+    height: LDOT.r * 2 + "px", background: P.indigo });
+  const cover = css(el("div", "abs disc", L), { background: P.indigo });
+  const Rc = Math.hypot(Math.max(LDOT.x, W - LDOT.x), Math.max(LDOT.y, H - LDOT.y)) * 1.05;
+
+  const WS = V ? W * 0.17 : H * 0.15;
+  const wm = row(L, lcy + LS / 2 + WS * 0.72, WS, "sg", P.navyDeep);
+  css(wm.r, { fontWeight: 600, letterSpacing: "-0.03em" });
+  const wmc = chars(wm, "Promylaia");
+  fit(wm, MAXW, WS);
+  const tg = row(L, 0, 100, "in", P.navy);
+  css(tg.r, { fontWeight: 500 });
+  const tgw = words(tg, "Nous supprimons du travail inutile.");
+  tgw[4].style.color = P.indigo; tgw[4].style.fontWeight = 700;
+  const TS = fit(tg, MAXW * 0.92, V ? W * 0.05 : H * 0.045);
+  tg.r.style.top = wm.y + wm.size * 0.62 + TS * 1.3 + "px";
+  const ctaY = parseFloat(tg.r.style.top) + TS * 2.3;
+  const cta = row(L, ctaY, TS * 0.86, "in", P.white);
+  const pill = css(el("span", "", cta.box), { display: "inline-block", background: P.indigo, borderRadius: "99px",
+    padding: `${TS * 0.5}px ${TS * 1.1}px`, fontWeight: 600, boxShadow: `0 ${TS * 0.3}px ${TS * 0.9}px rgba(91,61,245,0.35)` });
+  pill.innerHTML = `Réservez un appel <span style="opacity:.55;padding:0 .5em">·</span> promylaia.fr`;
+  place(wm); place(tg); place(cta);
+
+  scene(27, 30.01, L, t => {
+    BG = P.bg;
+    const p = oE(pr(t, 27.0, 27.42));
+    const R = lerp(Rc, LDOT.r, p);
+    css(cover, { left: LDOT.x - R + "px", top: LDOT.y - R + "px", width: 2 * R + "px", height: 2 * R + "px", opacity: p >= 0.999 ? 0 : 1 });
+    ldot.style.transform = `scale(${1 + 0.25 * hit(t, 27.42, 0.12) * (t > 27.42 ? 1 : 0)})`;
+    paths.forEach((pa, i) => pa.setAttribute("stroke-dashoffset", 1 - ioC(pr(t, 27.25 + i * 0.1, 27.85 + i * 0.1))));
+    knots.forEach((k, i) => (k.style.transform = `scale(${oB(pr(t, 27.75 + i * 0.07, 28.05 + i * 0.07))})`));
+    glow.style.opacity = oC(pr(t, 27.2, 28.0));
+    wmc.forEach((c, i) => {
+      const q = oE(pr(t, 27.55 + i * 0.03, 27.9 + i * 0.03));
+      c.style.transform = `translateY(${(1 - q) * 0.5}em)`; c.style.opacity = q;
+    });
+    reveal(tgw, t, 27.95, 0.05, 0.3);
+    cta.r.style.opacity = pr(t, 28.25, 28.4);
+    place(cta, `scale(${lerp(0.7, 1, oB(pr(t, 28.25, 28.6)))})`);
+    CAM.s = lerp(1.06, 1, oC(pr(t, 27.0, 28.7)));
+  });
+}
+
+}
+
+// --- moteur ------------------------------------------------------------------
+window.render = t => {
+  Object.assign(CAM, { s: 1, r: 0, x: 0, y: 0, ox: W / 2, oy: H / 2 });
+  for (const sc of scenes) {
+    const on = t >= sc.a && t < sc.b;
+    sc.L.style.visibility = on ? "visible" : "hidden";
+    if (on) sc.update(t);
+  }
+  document.body.style.background = BG;
+  cam.style.transformOrigin = `${CAM.ox}px ${CAM.oy}px`;
+  cam.style.transform = `translate(${CAM.x}px, ${CAM.y}px) rotate(${CAM.r}deg) scale(${CAM.s})`;
+};
+
+window.READY = false;
+(async () => {
+  await Promise.all(["700 100px SG", "600 100px SG", "500 100px IN", "600 100px IN", "700 100px IN"].map(f => document.fonts.load(f, "Aéà")));
+  build();
+  await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+  window.render(0);
+  window.READY = true;
+})();
+</script>
+</body>
+</html>
