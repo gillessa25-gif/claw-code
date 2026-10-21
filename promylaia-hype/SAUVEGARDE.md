@@ -75,3 +75,11 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Vérifié (1440, 1920, 390 px) : largeur = largeur de l'écran, aucun défilement horizontal, 0 erreur, 14 icônes (comme l'original), lien Instagram correct sur les 4 pages. La navigation accueil → /cgv donne un résultat vide en local, **identique sur le site d'origine** (limite du serveur de test local, pas de la modification).
 - Hauteur : 16:9 en pleine largeur = 810 px sur un écran de 1440 px ; le titre est sous la ligne de flottaison sur ordinateur.
 - Zip IONOS : `promylaia-site-ionos.zip`, **18 fichiers** (il remplace `promylaia-hero-video-ionos.zip`).
+
+## Étape 3 — Mise en ligne automatique (2026-10-21)
+- Workflow `Websits/.github/workflows/deploy-site.yml` (« Mise en ligne promylaia.fr ») fusionné sur `main` (commit `aea8866`). Il se déclenche à chaque push sur `main` touchant `promylaia/`, ou à la main (workflow_dispatch, option « forcer »).
+- Le site IONOS est dans `/public/` (capture du Webspace Explorer : la racine `/` ne contient que `public`). C'est la valeur par défaut du workflow.
+- 1re exécution (run 39609138296) : **rien envoyé**, secrets absents, toutes les étapes ignorées.
+- ❌ À faire par Gilles : créer les secrets GitHub `IONOS_SFTP_HOST`, `IONOS_SFTP_USER`, `IONOS_SFTP_PASSWORD`, `IONOS_REMOTE_DIR=/public/`. Ensuite, relancer le workflow (Actions > Run workflow), ce que Claude peut faire via l'API.
+- Garde-fous : sauvegarde des fichiers en ligne (artefact 30 j) ; arrêt si l'`index.html` en ligne ne correspond ni à l'export d'origine `23ceb8d` ni à une version du repo ; aucune suppression ; contrôle sur promylaia.fr (vidéo, Instagram gilless_ai, HTTP 200 sur le MP4).
+- Note : en mode Auto, la session bloque les actions de déploiement ; il a fallu passer en « Accept edits ».
