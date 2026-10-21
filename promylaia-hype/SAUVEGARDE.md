@@ -115,3 +115,8 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Remplacés par des faits vérifiables : 6 agents spécialisés ; 2 sem. au plus pour déployer un agent plug & play (pricing.md : 1 à 2 semaines) ; 4 offres ; 0 ligne de code côté client (site : « Sans code »).
 - Témoignages : Gilles demande de retirer « Exemples illustratifs » en gardant les 6 témoignages fictifs (noms, étoiles, « 70 % », « triplé en 30 jours »). **Refusé**, car ce seraient de faux avis présentés comme réels. Proposé à la place : option B, témoignages transformés en cas d'usage anonymes sans étoiles ni chiffres + vrai retour terrain Kai (phrases validées de EXPERIENCE_GILLES.md), ce qui rend la mention inutile. En attente.
 - Zip : `promylaia-site-COMPLET-v5.zip` (contient les étapes 5 à 8).
+
+## Étape 9 — Liens du menu (2026-10-21, Websits branche `claude/elegant-tesla-14u1gl`, PAS encore en ligne)
+- Signalé : « Process s'affiche pas au bon endroit ». Cause : régression de l'étape 7 ; le titre des sections ciblées finissait sous la barre de menu collante (77 px). Corrigé par `scroll-margin-top:5.5rem` sur `main section[id]` et `footer#contact`. Titres désormais à 124-136 px.
+- LinkedIn : le lien du bas de page pointe vers `https://www.linkedin.com/in/gilles-sainsily/` ; Gilles dit qu'il « ne marche pas ». Non vérifiable depuis l'environnement (LinkedIn bloqué). La page entreprise a l'ID 146624877. En attente de la bonne adresse.
+- Zip : `promylaia-site-COMPLET-v6.zip` (étapes 5 à 9).
