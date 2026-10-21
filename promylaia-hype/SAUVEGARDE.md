@@ -98,3 +98,9 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Signalé par Gilles : bas de page « qui s'affiche mal sur iPhone ». Rien vu dans un Chromium aux tailles iPhone ; Safari non testable ici. En attente d'une capture.
 - ⚠️ Refusé tel quel : retirer SEULEMENT les mentions « Exemples illustratifs… » (témoignages fictifs) et « Objectifs de déploiement… pas encore constatés » (chiffres +40/+90/+22/+35). Sans elles, de faux avis et de faux chiffres passeraient pour réels (pratique commerciale trompeuse). Proposé : retirer la mention AVEC le contenu fictif, ou garder les deux. En attente de la décision de Gilles.
 - Zips : `promylaia-mise-a-jour-2.zip` (9 fichiers modifiés depuis la version en ligne) et `promylaia-site-COMPLET-v2.zip` (site entier, 86 entrées).
+
+## Étape 6 — Couleurs alternées (2026-10-21, Websits branche `claude/elegant-tesla-14u1gl`, PAS encore en ligne)
+- Demande : « changer de temps en temps les couleurs du site comme dans la vidéo, il est trop fade ».
+- `<style id="pmy-colors">` dans le `<head>` des 4 pages : #services lavande `#ece9fa` ; bandeau « Promylaia conçoit… » corail `#ff6a4d`, texte `#17123a` ; #process indigo `#5b3df5`, texte blanc ; #apropos lavande `#e0dcf7`. Fond pleine largeur par box-shadow + clip-path.
+- Contrastes mesurés : bandeau 6,27, process 6,12, autres > 15 (seuil AA 4,5). 0 erreur, pas de défilement horizontal.
+- Zips : `promylaia-site-COMPLET-v3.zip` (site entier) / `promylaia-mise-a-jour-3.zip` (fichiers modifiés depuis la version en ligne).
