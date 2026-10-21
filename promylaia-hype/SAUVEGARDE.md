@@ -1,7 +1,7 @@
 # SAUVEGARDE — Vidéo hype Promylaia 30 s
 
 > Fichier de reprise : relire en début de chaque nouvelle session avant de toucher à la vidéo.
-> Dernière mise à jour : 2026-10-21 (vidéo ajoutée au héro du site, en attente de mise en ligne IONOS).
+> Dernière mise à jour : 2026-10-21 (vidéo placée tout en haut du héro du site, en attente de mise en ligne IONOS).
 
 ## État
 - ✅ 3 vidéos rendues et vérifiées (30,00 s, 30 i/s, 900 images, H.264 + AAC, crête audio −2 dBFS, aucune saturation) :
@@ -60,3 +60,10 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Vérifié en local (Chromium) : vidéo présente après hydratation, rendue par React, 0 erreur console, navigation /cgv → / OK, lecture auto muette OK (test avec une copie VP9, car ce Chromium ne lit pas le H.264).
 - ❌ **PAS en ligne** : aucun accès IONOS ni à promylaia.fr depuis l'environnement cloud. À faire par Gilles : envoyer les 6 fichiers du zip `promylaia-hero-video-ionos.zip` à la racine du site sur IONOS (FTP / gestionnaire de fichiers), en conservant `hero/`.
 - ⚠️ Non vérifié : que l'export du repo soit identique au site en ligne. Si le site a été modifié sur IONOS depuis l'export, envoyer `index.html` écraserait ces modifications.
+
+### Mise à jour : vidéo tout en haut (demande de Gilles, 2026-10-21)
+- La vidéo est maintenant le 1er élément du héro, juste sous le menu (32 px) ; marge du haut du héro réduite de `pt-16 md:pt-20` à `pt-8` ; 3,5 rem d'espace sous la vidéo.
+- ⚠️ Piège Next.js rencontré : le payload React réutilise l'icône flèche du bouton « Réserver un appel » par un **chemin d'index** (`$6:props:children:0:props:children:0:…`, `$0:data:0:rsc:…` dans `__next.__PAGE__.txt`). Mettre la vidéo en 1re position décale les index, ce qui provoque l'erreur React #570 et fait disparaître la page. Corrigé : `children:0` → `children:1` (12 références par fichier). Tout nouvel élément ajouté avant le bloc titre doit refaire cette correction.
+- Vérifié : 0 erreur, 14 icônes flèche (identique à l'original), chargement direct et navigation /cgv → / OK, lecture auto muette OK.
+- Conséquence sur ordinateur (1440×900) : la vidéo occupe presque tout le premier écran et le titre « Des agents IA qui travaillent pour vous » passe sous la ligne de flottaison ; le bouton « Réserver un appel » du menu reste visible.
+- Zip à envoyer sur IONOS mis à jour (mêmes 6 fichiers).
