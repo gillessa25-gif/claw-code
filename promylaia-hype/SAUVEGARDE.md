@@ -109,3 +109,9 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - `<style id="pmy-spacing">` dans le `<head>` des 4 pages : marges des sections 80/112 px → 36/48 px (mobile/ordinateur), espacements internes réduits (mt-12/14/16, gap-12/14, py-10 des lignes de services, md:gap-20).
 - Accueil : 8 317 → 7 137 px sur ordinateur (−14 %), 13 835 → 12 855 px sur mobile (−7 % ; la longueur mobile vient surtout des 6 fiches agents et des témoignages).
 - Zip à envoyer : `promylaia-site-COMPLET-v4.zip` (inclut toutes les étapes 5 à 7).
+
+## Étape 8 — Chiffres fictifs remplacés (2026-10-21, Websits branche `claude/elegant-tesla-14u1gl`, PAS encore en ligne)
+- Retirés : +40 / +90 / +22 / +35 et la mention « Objectifs de déploiement… pas encore constatés ».
+- Remplacés par des faits vérifiables : 6 agents spécialisés ; 2 sem. au plus pour déployer un agent plug & play (pricing.md : 1 à 2 semaines) ; 4 offres ; 0 ligne de code côté client (site : « Sans code »).
+- Témoignages : Gilles demande de retirer « Exemples illustratifs » en gardant les 6 témoignages fictifs (noms, étoiles, « 70 % », « triplé en 30 jours »). **Refusé**, car ce seraient de faux avis présentés comme réels. Proposé à la place : option B, témoignages transformés en cas d'usage anonymes sans étoiles ni chiffres + vrai retour terrain Kai (phrases validées de EXPERIENCE_GILLES.md), ce qui rend la mention inutile. En attente.
+- Zip : `promylaia-site-COMPLET-v5.zip` (contient les étapes 5 à 8).
