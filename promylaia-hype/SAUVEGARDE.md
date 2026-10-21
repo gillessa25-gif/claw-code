@@ -89,3 +89,12 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Non vérifié par Claude : promylaia.fr est inaccessible depuis l'environnement cloud.
 - Piège rencontré : après un premier envoi, la page s'affichait sans aucun style, car le dossier `_next/` (CSS, JS, polices) manquait ou était mal placé. Le WebTransfert ne recrée pas toujours les sous-dossiers. Vérification rapide : `https://promylaia.fr/_next/static/chunks/19955_h-v6nl4.css` doit renvoyer du code, pas une 404.
 - Le site en ligne correspond donc à `main` de Websits. Le workflow de mise en ligne automatique accepterait cette version (« une version de ce repo ») dès que les secrets IONOS seront créés.
+
+## Étape 5 — Ajustements du site (2026-10-21, branche `claude/elegant-tesla-14u1gl` de Websits, commit `6f8d0e0`, PAS encore en ligne ni sur `main`)
+- Vidéo 9:16 sur mobile (< 768 px) : `hero/promylaia-hero-9x16.mp4` (1080×1920, sans son, 1,9 Mo) + `hero/promylaia-hero-poster-9x16.jpg`. Deux `<source media>` et un `<style>` `.pmy-hero` dans le bloc vidéo. Testé à 390, 767, 768 et 1440 px.
+- Retirés : le badge « Nouvelle agence IA · places ouvertes… » (références de l'icône du bouton recalées : `children:3` → `children:2`) et le bloc « Le type d'entreprises qu'on accompagne » + « Profils fictifs » + logos fictifs.
+- Retour en haut au rechargement : script dans le `<head>` des 4 pages (s'active seulement si `performance` indique `reload` ; l'ancre est retirée ; un lien `#contact` ouvert normalement fonctionne toujours).
+- Bas de page compact : `<style id="pmy-footer">` dans le `<head>` des 4 pages (mobile 1207 → 709 px, ordinateur 692 → 436 px).
+- Signalé par Gilles : bas de page « qui s'affiche mal sur iPhone ». Rien vu dans un Chromium aux tailles iPhone ; Safari non testable ici. En attente d'une capture.
+- ⚠️ Refusé tel quel : retirer SEULEMENT les mentions « Exemples illustratifs… » (témoignages fictifs) et « Objectifs de déploiement… pas encore constatés » (chiffres +40/+90/+22/+35). Sans elles, de faux avis et de faux chiffres passeraient pour réels (pratique commerciale trompeuse). Proposé : retirer la mention AVEC le contenu fictif, ou garder les deux. En attente de la décision de Gilles.
+- Zips : `promylaia-mise-a-jour-2.zip` (9 fichiers modifiés depuis la version en ligne) et `promylaia-site-COMPLET-v2.zip` (site entier, 86 entrées).
