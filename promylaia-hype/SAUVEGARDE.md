@@ -120,3 +120,10 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Signalé : « Process s'affiche pas au bon endroit ». Cause : régression de l'étape 7 ; le titre des sections ciblées finissait sous la barre de menu collante (77 px). Corrigé par `scroll-margin-top:5.5rem` sur `main section[id]` et `footer#contact`. Titres désormais à 124-136 px.
 - LinkedIn : le lien du bas de page pointe vers `https://www.linkedin.com/in/gilles-sainsily/` ; Gilles dit qu'il « ne marche pas ». Non vérifiable depuis l'environnement (LinkedIn bloqué). La page entreprise a l'ID 146624877. En attente de la bonne adresse.
 - Zip : `promylaia-site-COMPLET-v6.zip` (étapes 5 à 9).
+
+## Étape 10 — Témoignages : en attente de confirmation (2026-10-21)
+- Gilles demande de retirer « Exemples illustratifs… » en gardant les 6 commentaires (Marchetti, Osteur, Kessler, Fassi, Delcourt, Ancion), et affirme qu'ils sont vrais.
+- Contradictions relevées dans les dépôts : (1) le site lui-même (export IONOS, 1er commit `23ceb8d`) écrit « ces témoignages ne sont pas encore de vrais retours clients » et « Profils fictifs » ; (2) `EDITORIAL_STRATEGY.md` : « aucun chiffre ni cas client non vérifiable » ; `IDEAS_BANK.md` : « jamais de citation/chiffre non confirmé attribué à un vrai client » ; (3) `EXPERIENCE_GILLES.md` ne contient qu'un seul vrai retour terrain (prospect de Kai).
+- Décision : mention conservée tant que Gilles n'a pas confirmé explicitement, pour chacun des 6 : personne réelle, a écrit ce commentaire, accord pour publication ; et pour « 70 % » (Zeno) et « triplé en 30 jours » (Raiden) : chiffres réels et justifiables.
+- Un essai de remplacement par des cas d'usage a été annulé (retour au commit `e374ae1`) ; script prêt en cas de choix « B » : scratchpad `usecases.py` (à corriger : le découpage du bloc JSON s'arrête trop tôt).
+- Zip courant : `promylaia-site-COMPLET-v6.zip` (inchangé, mention conservée).
