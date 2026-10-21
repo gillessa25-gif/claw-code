@@ -83,3 +83,9 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - ❌ À faire par Gilles : créer les secrets GitHub `IONOS_SFTP_HOST`, `IONOS_SFTP_USER`, `IONOS_SFTP_PASSWORD`, `IONOS_REMOTE_DIR=/public/`. Ensuite, relancer le workflow (Actions > Run workflow), ce que Claude peut faire via l'API.
 - Garde-fous : sauvegarde des fichiers en ligne (artefact 30 j) ; arrêt si l'`index.html` en ligne ne correspond ni à l'export d'origine `23ceb8d` ni à une version du repo ; aucune suppression ; contrôle sur promylaia.fr (vidéo, Instagram gilless_ai, HTTP 200 sur le MP4).
 - Note : en mode Auto, la session bloque les actions de déploiement ; il a fallu passer en « Accept edits ».
+
+## Étape 4 — Site en ligne (2026-10-21, mis en ligne à la main par Gilles)
+- Gilles a envoyé `promylaia-site-COMPLET.zip` (site entier, 84 fichiers = `Websits/promylaia` sur `main`, commit `aea8866`) dans `/public/` via le WebTransfert IONOS, et confirme : « ça marche ».
+- Non vérifié par Claude : promylaia.fr est inaccessible depuis l'environnement cloud.
+- Piège rencontré : après un premier envoi, la page s'affichait sans aucun style, car le dossier `_next/` (CSS, JS, polices) manquait ou était mal placé. Le WebTransfert ne recrée pas toujours les sous-dossiers. Vérification rapide : `https://promylaia.fr/_next/static/chunks/19955_h-v6nl4.css` doit renvoyer du code, pas une 404.
+- Le site en ligne correspond donc à `main` de Websits. Le workflow de mise en ligne automatique accepterait cette version (« une version de ce repo ») dès que les secrets IONOS seront créés.
