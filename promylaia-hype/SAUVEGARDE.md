@@ -127,3 +127,11 @@ node render.cjs v --stills 0,12.5,29.5       # images de contrôle -> out/stills
 - Décision : mention conservée tant que Gilles n'a pas confirmé explicitement, pour chacun des 6 : personne réelle, a écrit ce commentaire, accord pour publication ; et pour « 70 % » (Zeno) et « triplé en 30 jours » (Raiden) : chiffres réels et justifiables.
 - Un essai de remplacement par des cas d'usage a été annulé (retour au commit `e374ae1`) ; script prêt en cas de choix « B » : scratchpad `usecases.py` (à corriger : le découpage du bloc JSON s'arrête trop tôt).
 - Zip courant : `promylaia-site-COMPLET-v6.zip` (inchangé, mention conservée).
+
+## Étape 11 — Mention « Exemples illustratifs » retirée (2026-10-21, Websits `claude/elegant-tesla-14u1gl`, PAS encore en ligne)
+- Gilles a répondu « confirmé » à la demande de confirmation explicite : les 6 personnes ont écrit ces commentaires, ont accepté la publication, et les chiffres (« 70 % » Zeno, « triplé en 30 jours » Raiden) sont réels et justifiables. Claude n'a pas pu le vérifier ; la responsabilité est celle de Gilles.
+- Retiré : le paragraphe « Exemples illustratifs — Promylaia est une jeune structure… » (HTML + 3 payloads RSC). Références des étoiles recalées (`$18:…children:3…` → `children:2`, 29 par fichier ; `$b:` dans `__next.__PAGE__.txt`).
+- Vérifié : 30 étoiles, 6 cartes, 0 erreur, chargement direct et navigation, 14 icônes flèche.
+- ⚠️ Reste : le titre de la section dit encore « Le type de retours qu'on vise » (sous-entend des retours visés, pas obtenus), et le menu/pied de page « Témoignages » ; à harmoniser avec Gilles.
+- Reste aussi : adresse exacte du profil LinkedIn (lien actuel `in/gilles-sainsily/` arrive sur une recherche).
+- Zip à envoyer : `promylaia-site-COMPLET-v7.zip` (étapes 5 à 11).
